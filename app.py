@@ -71,49 +71,135 @@ if pagina == "Ricerca DFL":
 
         if dati:
 
-            ordine = dati[0]
+            # Cerco prima gli ordini ancora da evadere
+
+            ordini_aperti = [
+                ordine
+                for ordine in dati
+                if ordine["stato"] == "NON EVASO"
+            ]
 
 
-            st.success(
-                "Ordine trovato"
-            )
+            if ordini_aperti:
+
+                # prende l'unico ordine aperto
+                # se ce ne sono più di uno li vediamo
+
+                if len(ordini_aperti) > 1:
+
+                    st.warning(
+                        "Trovati più ordini NON EVASI con questo EAN"
+                    )
 
 
-            st.write(
-                "Ordine:",
-                ordine["ordine_id"]
-            )
+                    for ordine in ordini_aperti:
+
+                        st.write(
+                            "Ordine:",
+                            ordine["ordine_id"]
+                        )
+
+                else:
+
+                    ordine = ordini_aperti[0]
 
 
-            st.write(
-                "Cliente:",
-                ordine["cliente"]
-            )
+                    st.success(
+                        "Ordine trovato"
+                    )
 
 
-            st.write(
-                "Articolo:",
-                ordine["articolo"]
-            )
+                    st.write(
+                        "Ordine:",
+                        ordine["ordine_id"]
+                    )
 
 
-            st.write(
-                "Stato:",
-                ordine["stato"]
-            )
+                    st.write(
+                        "Cliente:",
+                        ordine["cliente"]
+                    )
 
 
-            if ordine.get("ldv_url"):
+                    st.write(
+                        "Articolo:",
+                        ordine["articolo"]
+                    )
 
-                st.link_button(
-                    "📄 Apri LDV",
-                    ordine["ldv_url"]
-                )
+
+                    st.write(
+                        "Stato:",
+                        ordine["stato"]
+                    )
+
+
+                    # Apertura LDV automatica
+
+                    if ordine["ldv_url"]:
+
+
+                        st.markdown(
+                            f"""
+                            <meta http-equiv="refresh" 
+                            content="1;URL={ordine['ldv_url']}">
+                            """,
+                            unsafe_allow_html=True
+                        )
+
+
+                        # Aggiorno stato
+
+                        supabase.table(
+                            "ordini"
+                        ).update(
+                            {
+                                "stato": "EVASO"
+                            }
+                        ).eq(
+                            "id",
+                            ordine["id"]
+                        ).execute()
+
+
+                    else:
+
+                        st.warning(
+                            "LDV non disponibile"
+                        )
+
 
             else:
 
+                # Tutti gli ordini con quell'EAN sono già evasi
+
+                ordine = dati[0]
+
+
                 st.warning(
-                    "LDV non ancora caricata"
+                    "⚠️ ORDINE GIÀ EVASO"
+                )
+
+
+                st.write(
+                    "Ordine:",
+                    ordine["ordine_id"]
+                )
+
+
+                st.write(
+                    "Cliente:",
+                    ordine["cliente"]
+                )
+
+
+                st.write(
+                    "Articolo:",
+                    ordine["articolo"]
+                )
+
+
+                st.success(
+                    "EVASO"
                 )
 
 
