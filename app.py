@@ -1,5 +1,6 @@
 import streamlit as st
 from supabase import create_client
+import requests
 
 
 # =========================
@@ -16,8 +17,8 @@ st.set_page_config(
 # SUPABASE
 # =========================
 
-SUPABASE_URL = "https://tinlardrswxsdiyhdiuc.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpbmxhcmRyc3d4c2RpeWhkaXVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTI1MjMsImV4cCI6MjA5OTg4ODUyM30.mwuk-A8eD6nFx_thX0S0wITOV3MieOtvhj5eOG_U9ko"
+SUPABASE_URL = "INSERISCI_URL_SUPABASE"
+SUPABASE_KEY = "INSERISCI_KEY_SUPABASE"
 
 
 supabase = create_client(
@@ -59,9 +60,6 @@ if pagina == "Ricerca DFL":
     if ean:
 
 
-        # Cerca primo ordine NON EVASO
-        # con quell'EAN
-
         risultato = (
             supabase
             .table("ordini")
@@ -77,6 +75,7 @@ if pagina == "Ricerca DFL":
         dati = risultato.data
 
 
+
         if dati:
 
 
@@ -89,25 +88,25 @@ if pagina == "Ricerca DFL":
 
 
             st.write(
-                "Ordine:",
+                "📦 Ordine:",
                 ordine["ordine_id"]
             )
 
 
             st.write(
-                "Cliente:",
+                "👤 Cliente:",
                 ordine["cliente"]
             )
 
 
             st.write(
-                "Articolo:",
+                "🛋 Articolo:",
                 ordine["articolo"]
             )
 
 
             st.write(
-                "Stato:",
+                "📌 Stato:",
                 ordine["stato"]
             )
 
@@ -116,48 +115,73 @@ if pagina == "Ricerca DFL":
             if ordine["ldv_url"]:
 
 
-                # Apertura automatica LDV
+                # Scarica PDF
 
-                st.markdown(
-                    f"""
-                    <meta http-equiv="refresh"
-                    content="1;URL={ordine['ldv_url']}">
-                    """,
-                    unsafe_allow_html=True
-                )
+                try:
+
+                    pdf = requests.get(
+                        ordine["ldv_url"]
+                    ).content
 
 
-                # Aggiorna stato
 
-                supabase.table(
-                    "ordini"
-                ).update(
-                    {
-                        "stato": "EVASO"
-                    }
-                ).eq(
-                    "id",
-                    ordine["id"]
-                ).execute()
+                    st.download_button(
+
+                        label="⬇️ Scarica LDV",
+
+                        data=pdf,
+
+                        file_name=ordine["ldv_file"],
+
+                        mime="application/pdf"
+
+                    )
 
 
-                st.success(
-                    "LDV aperta - Ordine evaso"
-                )
+                    # Aggiorna stato dopo visualizzazione
+
+                    if st.button(
+                        "Conferma stampa LDV"
+                    ):
+
+
+                        supabase.table(
+                            "ordini"
+                        ).update(
+                            {
+                                "stato": "EVASO"
+                            }
+                        ).eq(
+                            "id",
+                            ordine["id"]
+                        ).execute()
+
+
+
+                        st.success(
+                            "Ordine segnato come EVASO"
+                        )
+
+
+                except Exception as e:
+
+
+                    st.error(
+                        f"Errore download LDV: {e}"
+                    )
 
 
             else:
 
+
                 st.warning(
-                    "LDV non caricata"
+                    "LDV non ancora caricata"
                 )
 
 
 
         else:
 
-
-            # Cerca se esistono ordini già evasi
 
             controllo = (
                 supabase
@@ -172,15 +196,15 @@ if pagina == "Ricerca DFL":
 
 
                 st.warning(
-                    "⚠️ Tutti gli ordini con questo EAN sono già EVASI"
+                    "⚠️ Ordine già EVASO"
                 )
-
 
             else:
 
                 st.error(
                     "EAN non trovato"
                 )
+
 
 
 
@@ -218,7 +242,9 @@ if pagina == "Inserisci Ordine":
 
 
 
-    if st.button("Salva Ordine"):
+    if st.button(
+        "Salva Ordine"
+    ):
 
 
         nuovo_ordine = {
@@ -253,6 +279,7 @@ if pagina == "Inserisci Ordine":
 
 
 
+
 # ==================================================
 # CARICAMENTO LDV
 # ==================================================
@@ -278,7 +305,10 @@ if pagina == "Carica LDV":
             supabase
             .table("ordini")
             .select("*")
-            .eq("ordine_id", ordine_id)
+            .eq(
+                "ordine_id",
+                ordine_id
+            )
             .execute()
         )
 
@@ -322,7 +352,6 @@ if pagina == "Carica LDV":
                 )
 
 
-
                 st.write(
                     "Nome file:",
                     nome_file
@@ -330,22 +359,27 @@ if pagina == "Carica LDV":
 
 
 
-                if st.button("Carica LDV"):
+                if st.button(
+                    "Carica LDV"
+                ):
 
 
                     try:
 
 
-                        # Upload nel bucket LVD
-
                         supabase.storage.from_(
                             "LVD"
                         ).upload(
+
                             nome_file,
+
                             file.getvalue(),
+
                             {
-                                "content-type": "application/pdf"
+                                "content-type":
+                                "application/pdf"
                             }
+
                         )
 
 
@@ -361,22 +395,26 @@ if pagina == "Carica LDV":
 
 
 
-                        # Salva collegamento
-
                         supabase.table(
                             "ordini"
                         ).update(
+
                             {
 
-                                "ldv_file": nome_file,
+                                "ldv_file":
+                                nome_file,
 
-                                "ldv_url": url
+
+                                "ldv_url":
+                                url
 
                             }
 
                         ).eq(
+
                             "id",
                             ordine["id"]
+
                         ).execute()
 
 
@@ -393,7 +431,6 @@ if pagina == "Carica LDV":
                         st.error(
                             f"Errore caricamento LDV: {e}"
                         )
-
 
 
         else:
