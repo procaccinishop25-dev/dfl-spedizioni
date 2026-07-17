@@ -20,7 +20,8 @@ pagina = st.sidebar.selectbox(
     "Menu",
     [
         "Ricerca DFL",
-        "Inserisci Ordine"
+        "Inserisci Ordine",
+        "Carica LDV"
     ]
 )
 
@@ -140,3 +141,71 @@ if pagina == "Inserisci Ordine":
         st.success(
             "Ordine salvato!"
         )
+# -------------------------
+# CARICAMENTO LDV
+# -------------------------
+
+if pagina == "Carica LDV":
+
+    st.title("📄 Caricamento LDV")
+
+
+    ordine_id = st.text_input(
+        "Numero ordine"
+    )
+
+
+    if ordine_id:
+
+        risultato = (
+            supabase
+            .table("ordini")
+            .select("*")
+            .eq("ordine_id", ordine_id)
+            .execute()
+        )
+
+
+        dati = risultato.data
+
+
+        if dati:
+
+            ordine = dati[0]
+
+            st.write(
+                "Cliente:",
+                ordine["cliente"]
+            )
+
+            st.write(
+                "EAN:",
+                ordine["ean"]
+            )
+
+
+            file = st.file_uploader(
+                "Carica PDF LDV",
+                type=["pdf"]
+            )
+
+
+            if file:
+
+                nome_file = (
+                    f"Ordine_{ordine['ordine_id']}_"
+                    f"{ordine['ean']}.pdf"
+                )
+
+
+                st.write(
+                    "Nome file:",
+                    nome_file
+                )
+
+
+        else:
+
+            st.error(
+                "Ordine non trovato"
+            )
