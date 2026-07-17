@@ -2,19 +2,33 @@ import streamlit as st
 from supabase import create_client
 
 
+# -------------------------
+# CONFIGURAZIONE PAGINA
+# -------------------------
+
 st.set_page_config(
     page_title="DFL Gestione Spedizioni",
     page_icon="📦"
 )
 
-SUPABASE_URL = "https://tinlardrswxsdiyhdiuc.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpbmxhcmRyc3d4c2RpeWhkaXVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTI1MjMsImV4cCI6MjA5OTg4ODUyM30.mwuk-A8eD6nFx_thX0S0wITOV3MieOtvhj5eOG_U9ko"
+
+# -------------------------
+# CONNESSIONE SUPABASE
+# -------------------------
+
+SUPABASE_URL = "INSERISCI_TUO_URL"
+SUPABASE_KEY = "INSERISCI_TUA_KEY"
+
 
 supabase = create_client(
     SUPABASE_URL,
     SUPABASE_KEY
 )
 
+
+# -------------------------
+# MENU
+# -------------------------
 
 pagina = st.sidebar.selectbox(
     "Menu",
@@ -26,9 +40,10 @@ pagina = st.sidebar.selectbox(
 )
 
 
-# -------------------------
-# PAGINA DFL
-# -------------------------
+
+# ==================================================
+# PAGINA DFL - RICERCA EAN
+# ==================================================
 
 if pagina == "Ricerca DFL":
 
@@ -58,6 +73,7 @@ if pagina == "Ricerca DFL":
 
             ordine = dati[0]
 
+
             st.success(
                 "Ordine trovato"
             )
@@ -68,20 +84,37 @@ if pagina == "Ricerca DFL":
                 ordine["ordine_id"]
             )
 
+
             st.write(
                 "Cliente:",
                 ordine["cliente"]
             )
+
 
             st.write(
                 "Articolo:",
                 ordine["articolo"]
             )
 
+
             st.write(
                 "Stato:",
                 ordine["stato"]
             )
+
+
+            if ordine.get("ldv_url"):
+
+                st.link_button(
+                    "📄 Apri LDV",
+                    ordine["ldv_url"]
+                )
+
+            else:
+
+                st.warning(
+                    "LDV non ancora caricata"
+                )
 
 
         else:
@@ -91,9 +124,10 @@ if pagina == "Ricerca DFL":
             )
 
 
-# -------------------------
-# PAGINA ADMIN
-# -------------------------
+
+# ==================================================
+# PAGINA INSERIMENTO ORDINE
+# ==================================================
 
 if pagina == "Inserisci Ordine":
 
@@ -104,13 +138,16 @@ if pagina == "Inserisci Ordine":
         "Numero ordine"
     )
 
+
     cliente = st.text_input(
         "Cliente"
     )
 
+
     ean = st.text_input(
         "EAN"
     )
+
 
     articolo = st.text_input(
         "Articolo"
@@ -141,19 +178,25 @@ if pagina == "Inserisci Ordine":
         st.success(
             "Ordine salvato!"
         )
-# -------------------------
+
+
+
+# ==================================================
 # CARICAMENTO LDV
-# -------------------------
+# ==================================================
 
 if pagina == "Carica LDV":
 
     st.title("📄 Caricamento LDV")
 
+
     ordine_id = st.text_input(
         "Numero ordine"
     )
 
+
     if ordine_id:
+
 
         risultato = (
             supabase
@@ -163,16 +206,21 @@ if pagina == "Carica LDV":
             .execute()
         )
 
+
         dati = risultato.data
+
 
         if dati:
 
+
             ordine = dati[0]
+
 
             st.write(
                 "Cliente:",
                 ordine["cliente"]
             )
+
 
             st.write(
                 "EAN:",
@@ -188,6 +236,7 @@ if pagina == "Carica LDV":
 
             if file:
 
+
                 nome_file = (
                     f"Ordine_{ordine['ordine_id']}_"
                     f"{ordine['ean']}.pdf"
@@ -202,9 +251,12 @@ if pagina == "Carica LDV":
 
                 if st.button("Carica LDV"):
 
+
                     try:
 
-                        # Upload PDF su Supabase Storage
+
+                        # Upload PDF nel bucket LVD
+
                         supabase.storage.from_(
                             "LVD"
                         ).upload(
@@ -216,16 +268,20 @@ if pagina == "Carica LDV":
                         )
 
 
-                        # Creo URL pubblico
+                        # URL pubblico
+
                         url = (
                             supabase
                             .storage
                             .from_("LVD")
-                            .get_public_url(nome_file)
+                            .get_public_url(
+                                nome_file
+                            )
                         )
 
 
-                        # Salvo collegamento nel database
+                        # Aggiornamento ordine
+
                         supabase.table(
                             "ordini"
                         ).update(
@@ -246,12 +302,14 @@ if pagina == "Carica LDV":
 
                     except Exception as e:
 
+
                         st.error(
                             f"Errore caricamento LDV: {e}"
                         )
 
 
         else:
+
 
             st.error(
                 "Ordine non trovato"
