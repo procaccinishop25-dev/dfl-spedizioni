@@ -206,7 +206,7 @@ if pagina == "Carica LDV":
 
                         # Upload PDF su Supabase Storage
                         supabase.storage.from_(
-                            "ldv"
+                            "LVD"
                         ).upload(
                             nome_file,
                             file.getvalue(),
