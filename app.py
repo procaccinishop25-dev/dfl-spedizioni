@@ -200,12 +200,59 @@ if pagina == "Carica LDV":
 
                 st.write(
                     "Nome file:",
-                    nome_file
+                     nome_file
                 )
 
 
-        else:
+                if st.button("Carica LDV"):
 
-            st.error(
-                "Ordine non trovato"
-            )
+                    try:
+
+                          # Upload PDF su Supabase Storage
+                          supabase.storage.from_(
+                              "ldv"
+                          ).upload(
+                              nome_file,
+                              file.getvalue(),
+                              {
+                                  "content-type": "application/pdf"
+                              }
+                           )
+
+                           # Creo URL pubblico
+                           url = (
+                               supabase
+                               .storage
+                               .from_("ldv")
+                               .get_public_url(nome_file)
+                           )
+
+                           # Aggiorno ordine
+                           supabase.table(
+                              "ordini"
+                           ).update(
+                               {
+                                    "ldv_file": nome_file,
+                                    "ldv_url": url
+                               }
+                            ).eq(
+                                "ordine_id",
+                                 ordine["ordine_id"]
+                            ).execute()
+
+
+                            st.success(
+                                "LDV caricata correttamente"
+                            )
+
+
+                       except Exception as e:
+
+                           st.error(e)
+
+
+                         else:
+
+                        st.error(
+                            "Ordine non trovato"
+                         )
