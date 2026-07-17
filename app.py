@@ -16,8 +16,8 @@ st.set_page_config(
 # SUPABASE
 # =========================
 
-SUPABASE_URL = "INSERISCI_URL_SUPABASE"
-SUPABASE_KEY = "INSERISCI_KEY_SUPABASE"
+SUPABASE_URL = "https://tinlardrswxsdiyhdiuc.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpbmxhcmRyc3d4c2RpeWhkaXVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTI1MjMsImV4cCI6MjA5OTg4ODUyM30.mwuk-A8eD6nFx_thX0S0wITOV3MieOtvhj5eOG_U9ko"
 
 
 supabase = create_client(
