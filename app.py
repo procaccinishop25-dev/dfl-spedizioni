@@ -220,7 +220,7 @@ if pagina == "Carica LDV":
                         url = (
                             supabase
                             .storage
-                            .from_("ldv")
+                            .from_("LVD")
                             .get_public_url(nome_file)
                         )
 
